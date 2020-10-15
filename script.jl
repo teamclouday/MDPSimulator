@@ -6,9 +6,9 @@ export MDPGraph, createMDPGraph, addMDPGraphTransition!, copyMDPGraph, nextMDP!,
 
 """
 Graph structure containing relations between states for MDP\\
+`terminal` defines the terminal state name\\
 `states` contains all possible states\\
 `actions` contains all possible actions\\
-`terminals` defines all terminal states and corresponding values\\
 `relations` contains each trasition (S,A,S')\\
 `rewards` defines reward for each transition\\
 `probs` defines probability of each transition (S,A,S')\\
@@ -18,9 +18,9 @@ Graph structure containing relations between states for MDP\\
 `iternum` is the number of iterations performed
 """
 mutable struct MDPGraph
+    terminal::String
     states::Array{String}
     actions::Array{String}
-    terminals::Dict{String,AbstractFloat}
     relations::Array{Tuple{String,String,String}}
     rewards::Dict{Tuple{String,String,String},AbstractFloat}
     probs::Dict{Tuple{String,String,String},AbstractFloat}
@@ -36,20 +36,30 @@ MDPGraph creation function
 function createMDPGraph(states::Array{String}, actions::Array{String}, terminals::Array{String}, terminal_vals::Array{T},
         gamma::T)::MDPGraph where T<:AbstractFloat
     @assert length(terminals) == length(terminal_vals)
+    # create a terminal state name
+    terminal = "T"
+    while terminal in states
+        terminal = terminal * terminal
+    end
+    states = copy(states)
+    push!(states, terminal)
+    # prepare data
     relations::Array{Tuple{String,String,String}} = []
     rewards::Dict{Tuple{String,String,String},AbstractFloat} = Dict()
     probs::Dict{Tuple{String,String,String},AbstractFloat} = Dict()
     values::Dict{String,AbstractFloat} = Dict()
     decided::Dict{String,Union{String,Nothing}} = Dict()
-    terminals_dict::Dict{String,AbstractFloat} = Dict()
+    # initialize values and decided actions
     for state in states
         values[state] = 0.0
         decided[state] = nothing
     end
     for i in 1:length(terminals)
-        terminals_dict[terminals[i]] = terminal_vals[i]
+        push!(relations, (terminals[i], actions[1], terminal))
+        probs[(terminals[i], actions[1], terminal)] = 1.0
+        rewards[(terminals[i], actions[1], terminal)] = terminal_vals[i]
     end
-    graph = MDPGraph(copy(states), copy(actions), terminals_dict, relations, rewards, probs, values, decided, gamma, 0)
+    graph = MDPGraph(terminal, states, copy(actions), relations, rewards, probs, values, decided, gamma, 0)
     return graph
 end
 
@@ -57,7 +67,7 @@ end
 MDPGraph copy function
 """
 function copyMDPGraph(graph::MDPGraph)::MDPGraph
-    newGraph = MDPGraph(copy(graph.states), copy(graph.actions), copy(graph.terminals), copy(graph.relations),
+    newGraph = MDPGraph(graph.terminal, copy(graph.states), copy(graph.actions), copy(graph.relations),
         copy(graph.rewards), copy(graph.probs), copy(graph.values), copy(graph.decided), graph.gamma, graph.iternum)
     return newGraph
 end
@@ -66,22 +76,14 @@ end
 MDPGraph add transition
 """
 function addMDPGraphTransition!(graph::MDPGraph, state_0::String, action::String, state_1::String;
-        reward::Union{T,Nothing}=nothing, prob::T=0.5) where T<:AbstractFloat
-    @assert !(state_0 in keys(graph.terminals))
+        reward::T=0.0, prob::T=0.5) where T<:AbstractFloat
+    @assert state_0 != graph.terminal
     @assert state_0 in graph.states
     @assert state_1 in graph.states
     @assert action in graph.actions
     @assert 0.0 <= prob <= 1.0
     push!(graph.relations, (state_0, action, state_1))
-    if reward === nothing
-        if state_1 in keys(graph.terminals)
-            graph.rewards[(state_0, action, state_1)] = graph.terminals[state_1] # reward of getting to a terminal state
-        else
-            graph.rewards[(state_0, action, state_1)] = 0.0 # no reward if not specified
-        end
-    else
-        graph.rewards[(state_0, action, state_1)] = reward
-    end
+    graph.rewards[(state_0, action, state_1)] = reward
     graph.probs[(state_0, action, state_1)] = prob
     return nothing
 end
@@ -138,7 +140,7 @@ Get best action with corresponding Q value
 """
 function getBestActionWithQValue(graph::MDPGraph, state::String)::Pair{String,AbstractFloat}
     @assert state in graph.states
-    @assert !(state in keys(graph.terminals))
+    @assert state != graph.terminal
     actions = getPossibleActions(graph, state)
     @assert length(actions) > 0
     result::Dict{String,AbstractFloat} = Dict()
@@ -155,7 +157,7 @@ function nextMDP!(graph::MDPGraph)
     new_values = copy(graph.values)
     for state in graph.states
         # if terminal state, skip
-        if state in keys(graph.terminals)
+        if state == graph.terminal
             continue
         end
         action, qval = getBestActionWithQValue(graph, state)
@@ -183,12 +185,14 @@ function displayMDP(graph::MDPGraph)
     iternum = graph.iternum
     println("MDP Display Start (Iter = $iternum)")
     for state in graph.states
+        if state == graph.terminal
+            continue
+        end
         print("State = $state")
         val = graph.values[state]
         action = graph.decided[state]
-        if state in keys(graph.terminals)
+        if (state, graph.actions[1], graph.terminal) in graph.relations
             print(" (terminal)")
-            val = graph.terminals[state]
         end
         println("\n\tValue  = $val")
         println("\tAction = $action")
