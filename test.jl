@@ -20,7 +20,7 @@ function test1()
     MDPSimulator.addMDPGraphTransition!(graph, "c", "R", "d", prob=1.0)
     MDPSimulator.addMDPGraphTransition!(graph, "d", "L", "c", prob=1.0)
     MDPSimulator.addMDPGraphTransition!(graph, "d", "R", "e", prob=1.0)
-    MDPSimulator.runMDP!(graph, 10)
+    MDPSimulator.runMDP!(graph, 100)
     MDPSimulator.displayMDP(graph)
 end
 
@@ -47,7 +47,35 @@ function test2()
     MDPSimulator.addMDPGraphTransition!(graph, "C", "C", "B", prob=0.4, reward=2.0)
     MDPSimulator.addMDPGraphTransition!(graph, "C", "CC", "A", prob=0.4, reward=2.0)
     MDPSimulator.addMDPGraphTransition!(graph, "C", "CC", "B", prob=0.6, reward=0.0)
-    MDPSimulator.runMDP!(graph, 10)
+    MDPSimulator.runMDP!(graph, 100)
+    MDPSimulator.displayMDP(graph)
+end
+
+function test3()
+    # graph:
+    # A -> B,C
+    # B -> D
+    # C -> B,E
+    # D -> F
+    # E -> D,F
+    # terminal: None
+    # action: g
+    states = ["A", "B", "C", "D", "E", "F"]
+    actions = ["g"]
+    gamma = 0.5
+    terminals::Array{String} = []
+    terminal_vals::Array{Float64} = []
+    graph = MDPSimulator.createMDPGraph(states, actions, terminals, terminal_vals, gamma)
+    MDPSimulator.addMDPGraphTransition!(graph, "A", "g", "B", prob=0.5, reward=1.0)
+    MDPSimulator.addMDPGraphTransition!(graph, "A", "g", "C", prob=0.5, reward=1.0)
+    MDPSimulator.addMDPGraphTransition!(graph, "B", "g", "D", prob=1.0, reward=1.0)
+    MDPSimulator.addMDPGraphTransition!(graph, "C", "g", "B", prob=0.5, reward=1.0)
+    MDPSimulator.addMDPGraphTransition!(graph, "C", "g", "E", prob=0.5, reward=1.0)
+    MDPSimulator.addMDPGraphTransition!(graph, "D", "g", "F", prob=1.0, reward=1.0)
+    MDPSimulator.addMDPGraphTransition!(graph, "E", "g", "D", prob=0.5, reward=1.0)
+    MDPSimulator.addMDPGraphTransition!(graph, "E", "g", "F", prob=0.5, reward=1.0)
+    MDPSimulator.addMDPGraphTransition!(graph, "F", "g", "F", prob=1.0, reward=0.0)
+    MDPSimulator.runMDP!(graph, 100)
     MDPSimulator.displayMDP(graph)
 end
 
@@ -57,4 +85,8 @@ println()
 
 println("Test 2")
 test2()
+println()
+
+println("Test 3")
+test3()
 println()
