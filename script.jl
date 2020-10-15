@@ -36,6 +36,8 @@ MDPGraph creation function
 function createMDPGraph(states::Array{String}, actions::Array{String}, terminals::Array{String}, terminal_vals::Array{T},
         gamma::T)::MDPGraph where T<:AbstractFloat
     @assert length(terminals) == length(terminal_vals)
+    @assert length(states) > 0
+    @assert length(actions) > 0
     # create a terminal state name
     terminal = "T"
     while terminal in states
