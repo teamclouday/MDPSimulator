@@ -35,7 +35,7 @@ function test2()
     actions = ["C", "CC"]
     gamma = 0.5
     terminals::Array{String} = []
-    terminal_vals::Array{Float64} = []
+    terminal_vals::Array{AbstractFloat} = []
     graph = MDPSimulator.createMDPGraph(states, actions, terminals, terminal_vals, gamma)
     MDPSimulator.addMDPGraphTransition!(graph, "A", "C", "B", prob=1.0, reward=0.0)
     MDPSimulator.addMDPGraphTransition!(graph, "A", "CC", "C", prob=1.0, reward=-2.0)
@@ -64,7 +64,7 @@ function test3()
     actions = ["g"]
     gamma = 0.5
     terminals::Array{String} = []
-    terminal_vals::Array{Float64} = []
+    terminal_vals::Array{AbstractFloat} = []
     graph = MDPSimulator.createMDPGraph(states, actions, terminals, terminal_vals, gamma)
     MDPSimulator.addMDPGraphTransition!(graph, "A", "g", "B", prob=0.5, reward=1.0)
     MDPSimulator.addMDPGraphTransition!(graph, "A", "g", "C", prob=0.5, reward=1.0)
