@@ -155,7 +155,7 @@ end
 """
 Run 1 MDP iteration on MDPGraph, updating values in batch
 """
-function nextMDP!(graph::MDPGraph)
+function nextMDP!(graph::MDPGraph)::Bool
     new_values = copy(graph.values)
     for state in graph.states
         # if terminal state, skip
@@ -166,8 +166,10 @@ function nextMDP!(graph::MDPGraph)
         graph.decided[state] = action
         new_values[state] = qval
     end
+    converged = (graph.values == new_values)
     graph.values = new_values
     graph.iternum += 1
+    return converged
 end
 
 """
@@ -176,7 +178,10 @@ Run MDP by multiple iterations
 function runMDP!(graph::MDPGraph, iterations::Integer)
     @assert iterations >= 0
     for i in 1:iterations
-        nextMDP!(graph)
+        if nextMDP!(graph)
+            println("MDP Converged at iter = $(i-1)")
+            break
+        end
     end
 end
 
